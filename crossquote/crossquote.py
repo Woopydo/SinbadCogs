@@ -35,7 +35,7 @@ class CrossQuote:
         if ctx.invoked_subcommand is None:
             await self.bot.send_cmd_help(ctx)
 
-    @checks.admin_or_permissions(Manage_server=True)
+
     @crossquoteset.command(name="bypass", pass_context=True, no_pm=True)
     async def allow_without_permission(self, ctx, bypass=None):
         """allows people with manage server to allow users bypass needing
@@ -64,7 +64,7 @@ class CrossQuote:
         else:
             await self.bot.say("That doesn't look like valid input!")
 
-    @checks.is_owner()
+    
     @crossquoteset.command(name="init", hidden=True)
     async def manual_init_settings(self):
         """adds default settings for all servers the bot is in
@@ -102,7 +102,7 @@ class CrossQuote:
 
 
 
-    @commands.command(pass_context=True, name='crossquote')
+    @commands.command(pass_context=True, name='crossquote', aliases=['q','quote'])
     async def _q(self, ctx, message_id: int):
         """
         Quote someone with the message id. To get the message id you need to enable developer mode.
