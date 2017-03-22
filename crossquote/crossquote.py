@@ -36,13 +36,13 @@ class CrossQuote:
                     try:
                         message = await self.bot.get_message(channel, str(message_id))
                         if message:
-                            found = True
+                            await self.sendifallowed(ctx.message.channel, message)
                     except Exception as error:
                         log.debug(error)
-        await self.sendifallowed(ctx.message.author, ctx.message.channel, message)
 
 
-    async def sendifallowed(self, who, where, message=None):
+
+    async def sendifallowed(self, where, message=None):
         "checks if a response should be sent, then sends the appropriate response"
 
         if message:
@@ -58,9 +58,10 @@ class CrossQuote:
             em = discord.Embed(description=content, color=discord.Color.purple())
             em.set_author(name='{}'.format(author.name), icon_url=avatar)
             em.set_footer(text=footer)
+            await self.bot.send_message(where, embed=em)
         else:
             em = log.debug("no such message")
-        await self.bot.send_message(where, embed=em)
+
 
 def setup(bot):
     n = CrossQuote(bot)
