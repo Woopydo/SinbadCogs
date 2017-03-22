@@ -21,86 +21,8 @@ class CrossQuote:
     def __init__(self, bot):
         self.bot = bot
 
-        __version__ = "0.2"
+        __version__ = "0.2self"
         self.bot = bot
-        self.settings = dataIO.load_json('data/crossquote/settings.json')
-
-
-    def save_json(self):
-        dataIO.save_json("data/crossquote/settings.json", self.settings)
-
-    @commands.group(name="crossquoteset", pass_context=True, no_pm=True)
-    async def crossquoteset(self, ctx):
-        """configuration settings for cross server quotes"""
-        if ctx.invoked_subcommand is None:
-            await self.bot.send_cmd_help(ctx)
-
-
-    @crossquoteset.command(name="bypass", pass_context=True, no_pm=True)
-    async def allow_without_permission(self, ctx, bypass=None):
-        """allows people with manage server to allow users bypass needing
-        manage messages to quote from their server to others
-        bypass should be True or False. The default value is False"""
-
-        server = ctx.message.server
-
-        if bypass is None:
-            await self.bot.say("I was expecting a True or False after that.")
-        elif bypass is True:
-            if server.id not in self.settings:
-                self.init_settings(server)
-            self.settings[server.id]['bypass'] = True
-            self.save_json()
-            await self.bot.say("Now anyone can quote from this server "
-                               "if they can see the message")
-        elif bypass is False:
-            if server.id not in self.settings:
-                self.init_settings(server)
-            else:
-                self.settings[server.id]['bypass'] = False
-                self.save_json()
-            await self.bot.say("Quoting from this server again requires manage"
-                               " messages")
-        else:
-            await self.bot.say("That doesn't look like valid input!")
-
-    
-    @crossquoteset.command(name="init", hidden=True)
-    async def manual_init_settings(self):
-        """adds default settings for all servers the bot is in
-        can be called manually by the bot owner (hidden)"""
-
-        serv_ids = map(lambda s: s.id, self.bot.servers)
-        for serv_id in serv_ids:
-            if serv_id not in self.settings:
-                self.settings[serv_id] = {'bypass': False,
-                                          'whitelisted': [], #future feature
-                                          'blacklisted': []  #future feature
-                                         }
-                self.save_json()
-
-    async def init_settings(self, server=None):
-        """adds default settings for all servers the bot is in
-        when needed and on join"""
-
-        if server:
-            if server.id not in self.settings:
-                self.settings[server.id] = {'bypass': False,
-                                            'whitelisted': [], #future feature
-                                            'blacklisted': []  #future feature
-                                           }
-                self.save_json()
-        else:
-            serv_ids = map(lambda s: s.id, self.bot.servers)
-            for serv_id in serv_ids:
-                if serv_id not in self.settings:
-                    self.settings[serv_id] = {'bypass': False,
-                                              'whitelisted': [], #future feature
-                                              'blacklisted': []  #future feature
-                                             }
-                    self.save_json()
-
-
 
     @commands.command(pass_context=True, name='crossquote', aliases=['q','quote'])
     async def _q(self, ctx, message_id: int):
@@ -126,41 +48,20 @@ class CrossQuote:
         if message:
             channel = message.channel
             server = channel.server
-            self.init_settings(server)
-            perms_managechannel = channel.permissions_for(who).manage_messages
-            can_bypass = self.settings[server.id]['bypass']
-            if perms_managechannel or can_bypass:
-                content = message.clean_content
-                author = message.author
-                sname = server.name
-                cname = channel.name
-                timestamp = message.timestamp.strftime('%Y-%m-%d %H:%M')
-                avatar = author.avatar_url if author.avatar else author.default_avatar_url
-                footer = 'Said in {} #{} at {}'.format(sname, cname, timestamp)
-                em = discord.Embed(description=content, color=discord.Color.purple())
-                em.set_author(name='{}'.format(author.name), icon_url=avatar)
-                em.set_footer(text=footer)
-            else:
-                em = discord.Embed(description='You don\'t have permission to quote from that server')
+            content = message.clean_content
+            author = message.author
+            sname = server.name
+            cname = channel.name
+            timestamp = message.timestamp.strftime('%Y-%m-%d %H:%M')
+            avatar = author.avatar_url if author.avatar else author.default_avatar_url
+            footer = 'Said in {} #{} at {}'.format(sname, cname, timestamp)
+            em = discord.Embed(description=content, color=discord.Color.purple())
+            em.set_author(name='{}'.format(author.name), icon_url=avatar)
+            em.set_footer(text=footer)
         else:
-            em = discord.Embed(description='I\'m sorry, I couldn\'t find that message', color=discord.Color.red())
+            em = log.debug("no such message")
         await self.bot.send_message(where, embed=em)
 
-
-
-def check_folder():
-    f = 'data/crossquote'
-    if not os.path.exists(f):
-        os.makedirs(f)
-
-def check_file():
-    f = 'data/crossquote/settings.json'
-    if dataIO.is_valid_json(f) is False:
-        dataIO.save_json(f, {})
-
 def setup(bot):
-    check_folder()
-    check_file()
     n = CrossQuote(bot)
-    bot.add_listener(n.init_settings, "on_server_join")
     bot.add_cog(n)
